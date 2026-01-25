@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年春招信息汇总表</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f7fa; padding: 20px; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); padding: 24px; }
+        h1 { text-align: center; color: #1a1a1a; margin-bottom: 12px; font-size: 28px; }
+        .update-summary { text-align: center; margin-bottom: 20px; }
+        .update-summary .date { font-size: 13px; color: #999; margin-bottom: 8px; }
+        .update-stats { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+        .update-stat { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f0f2f5; border-radius: 6px; }
+        .update-stat.today { background: #e6f7ff; border: 1px solid #91d5ff; }
+        .update-stat.recent { background: #fff7e6; border: 1px solid #ffd591; }
+        .update-stat-icon { font-size: 18px; }
+        .update-stat-label { font-size: 13px; color: #666; }
+        .update-stat-value { font-size: 20px; font-weight: bold; color: #1890ff; }
+        .update-stat.today .update-stat-value { color: #0050b3; }
+        .update-stat.recent .update-stat-value { color: #d46b08; }
+        .loading { text-align: center; padding: 40px; color: #999; }
+        .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #1890ff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { text-align: center; padding: 40px; color: #ff4d4f; background: #fff2f0; border-radius: 8px; margin: 20px 0; }
+        .filter-section { background: #f0f2f5; padding: 20px; border-radius: 6px; margin-bottom: 20px; }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { font-weight: 500; margin-bottom: 6px; color: #555; font-size: 14px; }
+        .filter-group input { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
+        .filter-group input:focus { outline: none; border-color: #1890ff; }
+        .filter-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .filter-status { display: flex; flex-wrap: wrap; gap: 8px; }
+        .filter-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 4px; font-size: 12px; color: #0050b3; }
+        .filter-tag .remove { cursor: pointer; font-weight: bold; }
+        .filter-tag .remove:hover { color: #ff4d4f; }
+        .btn-reset { padding: 8px 20px; background: #ff4d4f; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-reset:hover { background: #ff7875; }
+        .result-count { text-align: center; margin-bottom: 16px; color: #666; font-size: 14px; }
+        .result-count strong { color: #1890ff; font-size: 18px; }
+        .table-container { overflow-x: auto; border: 1px solid #e8e8e8; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead { position: sticky; top: 0; z-index: 10; }
+        th { background: #fafafa; padding: 12px 8px; text-align: left; font-weight: 500; border-bottom: 2px solid #e8e8e8; white-space: nowrap; color: #333; }
+        td { padding: 10px 8px; border-bottom: 1px solid #e8e8e8; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        tbody tr:hover { background: #e6f7ff; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:nth-child(even):hover { background: #e6f7ff; }
+        a { color: #1890ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+        .multi-select { position: relative; }
+        .multi-select-trigger { min-height: 32px; padding: 4px 8px; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer; background: white; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+        .multi-select-trigger:focus { outline: none; border-color: #1890ff; }
+        .multi-select-trigger .placeholder { color: #bbb; }
+        .multi-select-trigger .selected-tag { background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 3px; padding: 2px 6px; font-size: 12px; color: #0050b3; display: flex; align-items: center; gap: 4px; }
+        .multi-select-trigger .selected-tag .remove { cursor: pointer; font-weight: bold; }
+        .multi-select-options { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d9d9d9; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+        .multi-select-options.show { display: block; }
+        .multi-select-option { padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .multi-select-option:hover { background: #f5f5f5; }
+        .multi-select-option.selected { background: #e6f7ff; }
+        .multi-select-option input[type="checkbox"] { margin: 0; }
+        @media (max-width: 768px) {
+            .filter-grid { grid-template-columns: 1fr; }
+            .container { padding: 16px; }
+            h1 { font-size: 20px; }
+            .update-stats { gap: 12px; }
+            .update-stat { padding: 6px 12px; }
+            .update-stat-value { font-size: 18px; }
+            table { font-size: 11px; }
+            th, td { padding: 8px 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>2026年春招信息汇总表</h1>
+
+        <!-- Loading state -->
+        <div id="loadingState" class="loading">
+            <div class="loading-spinner"></div>
+            <p>正在加载数据...</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="errorState" class="error" style="display: none;">
+            <p>数据加载失败，请刷新页面重试</p>
+        </div>
+
+        <!-- Main content (hidden until loaded) -->
+        <div id="mainContent" style="display: none;">
+            <div class="update-summary">
+                <div class="date" id="updateDate">数据更新至：加载中...</div>
+                <div class="update-stats">
+                    <div class="update-stat today">
+                        <span class="update-stat-icon">📅</span>
+                        <span class="update-stat-label">今日更新</span>
+                        <span class="update-stat-value" id="todayCount">0</span>
+                        <span class="update-stat-label">条</span>
+                    </div>
+                    <div class="update-stat recent">
+                        <span class="update-stat-icon">📋</span>
+                        <span class="update-stat-label">近3天更新</span>
+                        <span class="update-stat-value" id="recentCount">0</span>
+                        <span class="update-stat-label">条</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label>企业性质</label>
+                        <div class="multi-select" id="companyNatureSelect"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>批次</label>
+                        <div class="multi-select" id="batchSelect"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>工作地点</label>
+                        <input type="text" id="locationInput" placeholder="输入关键词搜索" />
+                    </div>
+                    <div class="filter-group">
+                        <label>公司名称</label>
+                        <input type="text" id="companyNameInput" placeholder="输入关键词搜索" />
+                    </div>
+                    <div class="filter-group">
+                        <label>招聘岗位</label>
+                        <input type="text" id="positionInput" placeholder="输入关键词搜索" />
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <div class="filter-status" id="filterStatus"></div>
+                    <button class="btn-reset" id="resetBtn">🔄 重置筛选</button>
+                </div>
+            </div>
+
+            <div class="result-count">
+                共找到 <strong id="totalCount">0</strong> 条记录
+            </div>
+
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" id="noResults" style="display: none;">
+                <div class="empty-state-icon">🔍</div>
+                <p>没有找到符合条件的记录</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Excel文件路径（可修改为实际路径）
+        const EXCEL_URL = './2026春招信息汇总表.xlsx';
+
+        // Global state
+        let allData = [];
+        let filteredData = [];
+        let headers = [];
+        let filterState = {
+            '企业性质': [],
+            '批次': [],
+            '工作地点': '',
+            '公司名称': '',
+            '招聘岗位': ''
+        };
+        let filterOptions = {
+            '企业性质': [],
+            '批次': []
+        };
+
+        // DOM elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const mainContent = document.getElementById('mainContent');
+        const updateDate = document.getElementById('updateDate');
+        const todayCount = document.getElementById('todayCount');
+        const recentCount = document.getElementById('recentCount');
+        const totalCount = document.getElementById('totalCount');
+        const dataTable = document.getElementById('dataTable');
+        const noResults = document.getElementById('noResults');
+        const filterStatus = document.getElementById('filterStatus');
+
+        // Initialize: Load Excel file
+        async function init() {
+            try {
+                const response = await fetch(EXCEL_URL);
+                if (!response.ok) throw new Error('Failed to fetch Excel file');
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                parseExcelWorkbook(workbook);
+            } catch (error) {
+                console.error('Error loading Excel:', error);
+                showError();
+            }
+        }
+
+        function showError() {
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
+        }
+
+        function parseExcelWorkbook(workbook) {
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+            // Extract headers from row 2 (index 1)
+            headers = [];
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 1, c: col });
+                const cell = worksheet[cellAddress];
+                headers.push(cell ? (cell.v || '') : `Column${col}`);
+            }
+
+            // Extract data from row 3 onwards (index 2+)
+            allData = [];
+            for (let row = 2; row <= range.e.r; row++) {
+                const rowData = {};
+                let hasData = false;
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                    const cell = worksheet[cellAddress];
+                    const fieldName = headers[col - range.s.c];
+
+                    const value = cell ? (cell.v !== undefined && cell.v !== null ? cell.v : '') : '';
+                    if (value) hasData = true;
+
+                    rowData[fieldName] = {
+                        value: value,
+                        hyperlink: cell?.l?.Target || null
+                    };
+                }
+                if (hasData) {
+                    allData.push(rowData);
+                }
+            }
+
+            // Show main content and initialize
+            loadingState.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            buildFilterOptions();
+            initializeFilters();
+            updateDateStats();
+            applyFilters();
+            renderTable();
+        }
+
+        function updateDateStats() {
+            const today = new Date();
+            const todayStr = formatDate(today);
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(today.getDate() - 3);
+
+            let todayCnt = 0;
+            let recentCnt = 0;
+
+            allData.forEach(row => {
+                const updateTime = row['更新时间']?.value || '';
+                if (updateTime) {
+                    const rowDate = parseDate(updateTime);
+                    if (rowDate) {
+                        if (formatDate(rowDate) === todayStr) todayCnt++;
+                        if (rowDate >= threeDaysAgo) recentCnt++;
+                    }
+                }
+            });
+
+            updateDate.textContent = `数据更新至：${todayStr}`;
+            todayCount.textContent = todayCnt;
+            recentCount.textContent = recentCnt;
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+        }
+
+        function parseDate(dateStr) {
+            // Handle YYYY.MM.DD format
+            const match = dateStr.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+            if (match) {
+                return new Date(match[1], match[2] - 1, match[3]);
+            }
+            return null;
+        }
+
+        function buildFilterOptions() {
+            const companyNatureSet = new Set();
+            const batchSet = new Set();
+
+            allData.forEach(row => {
+                const nature = row['企业性质']?.value || '';
+                const batch = row['批次']?.value || '';
+                if (nature) companyNatureSet.add(nature);
+                if (batch) batchSet.add(batch);
+            });
+
+            filterOptions['企业性质'] = Array.from(companyNatureSet).sort();
+            filterOptions['批次'] = Array.from(batchSet).sort();
+        }
+
+        function initializeFilters() {
+            createMultiSelect('companyNatureSelect', '企业性质', filterOptions['企业性质']);
+            createMultiSelect('batchSelect', '批次', filterOptions['批次']);
+
+            let debounceTimer;
+            const debouncedFilter = () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterState['工作地点'] = document.getElementById('locationInput').value.trim();
+                    filterState['公司名称'] = document.getElementById('companyNameInput').value.trim();
+                    filterState['招聘岗位'] = document.getElementById('positionInput').value.trim();
+                    applyFilters();
+                    renderTable();
+                }, 300);
+            };
+
+            document.getElementById('locationInput').addEventListener('input', debouncedFilter);
+            document.getElementById('companyNameInput').addEventListener('input', debouncedFilter);
+            document.getElementById('positionInput').addEventListener('input', debouncedFilter);
+            document.getElementById('resetBtn').addEventListener('click', resetFilters);
+        }
+
+        function createMultiSelect(containerId, fieldName, options) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'multi-select-wrapper';
+
+            const trigger = document.createElement('div');
+            trigger.className = 'multi-select-trigger';
+            trigger.innerHTML = '<span class="placeholder">请选择</span>';
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'multi-select-options';
+
+            options.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'multi-select-option';
+                optionDiv.innerHTML = `<input type="checkbox" value="${option}" /><span>${option}</span>`;
+
+                const checkbox = optionDiv.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (!filterState[fieldName].includes(option)) filterState[fieldName].push(option);
+                        optionDiv.classList.add('selected');
+                    } else {
+                        filterState[fieldName] = filterState[fieldName].filter(v => v !== option);
+                        optionDiv.classList.remove('selected');
+                    }
+                    updateTrigger(trigger, fieldName);
+                    applyFilters();
+                    renderTable();
+                });
+
+                optionDiv.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            trigger.addEventListener('click', () => {
+                const isShown = optionsContainer.classList.contains('show');
+                document.querySelectorAll('.multi-select-options').forEach(el => el.classList.remove('show'));
+                if (!isShown) optionsContainer.classList.add('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) optionsContainer.classList.remove('show');
+            });
+
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(optionsContainer);
+            container.appendChild(wrapper);
+        }
+
+        function updateTrigger(trigger, fieldName) {
+            const selected = filterState[fieldName];
+            if (selected.length === 0) {
+                trigger.innerHTML = '<span class="placeholder">请选择</span>';
+            } else if (selected.length <= 3) {
+                trigger.innerHTML = selected.map(s => `<span class="selected-tag">${s}<span class="remove" data-value="${s}">×</span></span>`).join('');
+                trigger.querySelectorAll('.selected-tag .remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = btn.dataset.value;
+                        filterState[fieldName] = filterState[fieldName].filter(v => v !== value);
+                        const container = btn.closest('.multi-select-wrapper');
+                        const checkbox = container.querySelector(`input[value="${value}"]`);
+                        if (checkbox) checkbox.checked = false;
+                        updateTrigger(trigger, fieldName);
+                        applyFilters();
+                        renderTable();
+                    });
+                });
+            } else {
+                trigger.innerHTML = `<span class="selected-tag">已选 ${selected.length} 项</span>`;
+            }
+        }
+
+        function applyFilters() {
+            filteredData = allData.filter(row => {
+                if (filterState['企业性质'].length > 0) {
+                    const value = row['企业性质']?.value || '';
+                    if (!filterState['企业性质'].includes(value)) return false;
+                }
+                if (filterState['批次'].length > 0) {
+                    const value = row['批次']?.value || '';
+                    if (!filterState['批次'].includes(value)) return false;
+                }
+                if (filterState['工作地点']) {
+                    const value = (row['工作地点']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['工作地点'].toLowerCase())) return false;
+                }
+                if (filterState['公司名称']) {
+                    const value = (row['公司名称']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['公司名称'].toLowerCase())) return false;
+                }
+                if (filterState['招聘岗位']) {
+                    const value = (row['招聘岗位']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['招聘岗位'].toLowerCase())) return false;
+                }
+                return true;
+            });
+
+            totalCount.textContent = filteredData.length;
+            updateFilterStatus();
+        }
+
+        function updateFilterStatus() {
+            const tags = [];
+            if (filterState['企业性质'].length > 0) tags.push({field: '企业性质', value: filterState['企业性质'].join(', ')});
+            if (filterState['批次'].length > 0) tags.push({field: '批次', value: filterState['批次'].join(', ')});
+            if (filterState['工作地点']) tags.push({field: '工作地点', value: filterState['工作地点']});
+            if (filterState['公司名称']) tags.push({field: '公司名称', value: filterState['公司名称']});
+            if (filterState['招聘岗位']) tags.push({field: '招聘岗位', value: filterState['招聘岗位']});
+            filterStatus.innerHTML = tags.map(tag => `<span class="filter-tag">${tag.field}: ${tag.value.length > 20 ? tag.value.substring(0, 20) + '...' : tag.value}<span class="remove" data-field="${tag.field}">×</span></span>`).join('');
+            filterStatus.querySelectorAll('.filter-tag .remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const field = btn.dataset.field;
+                    if (field === '企业性质' || field === '批次') {
+                        filterState[field] = [];
+                        const containerId = field === '企业性质' ? 'companyNatureSelect' : 'batchSelect';
+                        const container = document.getElementById(containerId);
+                        container.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.closest('.multi-select-option').classList.remove('selected'); });
+                        const trigger = container.querySelector('.multi-select-trigger');
+                        updateTrigger(trigger, field);
+                    } else {
+                        filterState[field] = '';
+                        document.getElementById(field === '工作地点' ? 'locationInput' : field === '公司名称' ? 'companyNameInput' : 'positionInput').value = '';
+                    }
+                    applyFilters();
+                    renderTable();
+                });
+            });
+        }
+
+        function resetFilters() {
+            filterState = {
+                '企业性质': [],
+                '批次': [],
+                '工作地点': '',
+                '公司名称': '',
+                '招聘岗位': ''
+            };
+            document.getElementById('locationInput').value = '';
+            document.getElementById('companyNameInput').value = '';
+            document.getElementById('positionInput').value = '';
+            ['companyNatureSelect', 'batchSelect'].forEach(id => {
+                const container = document.getElementById(id);
+                container.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.closest('.multi-select-option').classList.remove('selected'); });
+                const fieldName = id === 'companyNatureSelect' ? '企业性质' : '批次';
+                updateTrigger(container.querySelector('.multi-select-trigger'), fieldName);
+            });
+            applyFilters();
+            renderTable();
+        }
+
+        function renderTable() {
+            const thead = dataTable.querySelector('thead');
+            const tbody = dataTable.querySelector('tbody');
+            thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+            if (filteredData.length === 0) {
+                dataTable.parentElement.style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+                dataTable.parentElement.style.display = 'block';
+                tbody.innerHTML = filteredData.map(row => {
+                    return '<tr>' + headers.map(header => {
+                        const cell = row[header] || {value: '', hyperlink: null};
+                        if (cell.hyperlink && cell.value) return `<td><a href="${cell.hyperlink}" target="_blank">${cell.value}</a></td>`;
+                        return `<td>${cell.value}</td>`;
+                    }).join('') + '</tr>';
+                }).join('');
+            }
+        }
+
+        // Start loading
+        init();
+    </script>
+</body>
+</html>
