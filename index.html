@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年春招信息汇总表</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* 官方渐变背景 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* 主容器 - 现代卡片风格 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 标题 - 活泼风格 */
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* 更新统计区域 */
+        .update-summary {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .update-summary .date {
+            font-size: 13px;
+            color: #8b5cf6;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .update-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .update-stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .update-stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .update-stat.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .update-stat.recent {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .update-stat-icon {
+            font-size: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .update-stat-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .update-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b5cf6;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 92, 246, 0.2);
+            border-top: 4px solid #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ef4444;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-radius: 12px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        /* 筛选区域 */
+        .filter-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .filter-group input {
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        .filter-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-status {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            font-weight: 500;
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .filter-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .filter-tag .remove:hover {
+            transform: scale(1.2);
+        }
+
+        /* 重置按钮 */
+        .btn-reset {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.5);
+        }
+
+        .btn-reset:active {
+            transform: translateY(0);
+        }
+
+        /* 结果统计 */
+        .result-count {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #6b7280;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .result-count strong {
+            color: #8b5cf6;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        /* 表格容器 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            background: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 10px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: background 0.2s ease;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: scale(1.002);
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tbody tr:nth-child(even):hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        }
+
+        /* 链接样式 */
+        a {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        a:hover::after {
+            width: 100%;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* 多选下拉框 */
+        .multi-select {
+            position: relative;
+        }
+
+        .multi-select-trigger {
+            min-height: 40px;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            background: white;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .multi-select-trigger:hover {
+            border-color: #c4b5fd;
+        }
+
+        .multi-select-trigger:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        .multi-select-trigger .placeholder {
+            color: #9ca3af;
+        }
+
+        .multi-select-trigger .selected-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .multi-select-trigger .selected-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .multi-select-trigger .selected-tag .remove:hover {
+            transform: scale(1.2);
+        }
+
+        .multi-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            margin-top: 4px;
+        }
+
+        .multi-select-options.show {
+            display: block;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .multi-select-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .multi-select-option:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .multi-select-option.selected {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+        }
+
+        .multi-select-option input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            accent-color: #8b5cf6;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .update-stats {
+                gap: 12px;
+            }
+
+            .update-stat {
+                padding: 10px 16px;
+            }
+
+            .update-stat-value {
+                font-size: 20px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 10px 6px;
+            }
+
+            .multi-select-options {
+                max-height: 200px;
+            }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>2026年春招信息汇总表</h1>
+
+        <!-- Loading state -->
+        <div id="loadingState" class="loading">
+            <div class="loading-spinner"></div>
+            <p>正在加载数据...</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="errorState" class="error" style="display: none;">
+            <p>数据加载失败，请刷新页面重试</p>
+        </div>
+
+        <!-- Main content (hidden until loaded) -->
+        <div id="mainContent" style="display: none;">
+            <div class="update-summary">
+                <div class="date" id="updateDate">数据更新至：加载中...</div>
+                <div class="update-stats">
+                    <div class="update-stat today">
+                        <span class="update-stat-icon">📅</span>
+                        <span class="update-stat-label">今日更新</span>
+                        <span class="update-stat-value" id="todayCount">0</span>
+                        <span class="update-stat-label">条</span>
+                    </div>
+                    <div class="update-stat recent">
+                        <span class="update-stat-icon">📋</span>
+                        <span class="update-stat-label">近3天更新</span>
+                        <span class="update-stat-value" id="recentCount">0</span>
+                        <span class="update-stat-label">条</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label>企业性质</label>
+                        <div class="multi-select" id="companyNatureSelect"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>批次</label>
+                        <div class="multi-select" id="batchSelect"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>工作地点</label>
+                        <input type="text" id="locationInput" placeholder="输入关键词搜索" />
+                    </div>
+                    <div class="filter-group">
+                        <label>公司名称</label>
+                        <input type="text" id="companyNameInput" placeholder="输入关键词搜索" />
+                    </div>
+                    <div class="filter-group">
+                        <label>招聘岗位</label>
+                        <input type="text" id="positionInput" placeholder="输入关键词搜索" />
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <div class="filter-status" id="filterStatus"></div>
+                    <button class="btn-reset" id="resetBtn">🔄 重置筛选</button>
+                </div>
+            </div>
+
+            <div class="result-count">
+                共找到 <strong id="totalCount">0</strong> 条记录
+            </div>
+
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" id="noResults" style="display: none;">
+                <div class="empty-state-icon">🔍</div>
+                <p>没有找到符合条件的记录</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Excel文件路径（可修改为实际路径）
+        const EXCEL_URL = './2026春招信息汇总表.xlsx';
+
+        // Global state
+        let allData = [];
+        let filteredData = [];
+        let headers = [];
+        let filterState = {
+            '企业性质': [],
+            '批次': [],
+            '工作地点': '',
+            '公司名称': '',
+            '招聘岗位': ''
+        };
+        let filterOptions = {
+            '企业性质': [],
+            '批次': []
+        };
+
+        // DOM elements
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const mainContent = document.getElementById('mainContent');
+        const updateDate = document.getElementById('updateDate');
+        const todayCount = document.getElementById('todayCount');
+        const recentCount = document.getElementById('recentCount');
+        const totalCount = document.getElementById('totalCount');
+        const dataTable = document.getElementById('dataTable');
+        const noResults = document.getElementById('noResults');
+        const filterStatus = document.getElementById('filterStatus');
+
+        // Initialize: Load Excel file
+        async function init() {
+            try {
+                const response = await fetch(EXCEL_URL);
+                if (!response.ok) throw new Error('Failed to fetch Excel file');
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                parseExcelWorkbook(workbook);
+            } catch (error) {
+                console.error('Error loading Excel:', error);
+                showError();
+            }
+        }
+
+        function showError() {
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
+        }
+
+        function parseExcelWorkbook(workbook) {
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+            // Extract headers from row 2 (index 1)
+            headers = [];
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 1, c: col });
+                const cell = worksheet[cellAddress];
+                headers.push(cell ? (cell.v || '') : `Column${col}`);
+            }
+
+            // Extract data from row 3 onwards (index 2+)
+            allData = [];
+            for (let row = 2; row <= range.e.r; row++) {
+                const rowData = {};
+                let hasData = false;
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                    const cell = worksheet[cellAddress];
+                    const fieldName = headers[col - range.s.c];
+
+                    const value = cell ? (cell.v !== undefined && cell.v !== null ? cell.v : '') : '';
+                    if (value) hasData = true;
+
+                    rowData[fieldName] = {
+                        value: value,
+                        hyperlink: cell?.l?.Target || null
+                    };
+                }
+                if (hasData) {
+                    allData.push(rowData);
+                }
+            }
+
+            // Show main content and initialize
+            loadingState.style.display = 'none';
+            mainContent.style.display = 'block';
+
+            buildFilterOptions();
+            initializeFilters();
+            updateDateStats();
+            applyFilters();
+            renderTable();
+        }
+
+        function updateDateStats() {
+            const today = new Date();
+            const todayStr = formatDate(today);
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(today.getDate() - 3);
+
+            let todayCnt = 0;
+            let recentCnt = 0;
+
+            allData.forEach(row => {
+                const updateTime = row['更新时间']?.value || '';
+                if (updateTime) {
+                    const rowDate = parseDate(updateTime);
+                    if (rowDate) {
+                        if (formatDate(rowDate) === todayStr) todayCnt++;
+                        if (rowDate >= threeDaysAgo) recentCnt++;
+                    }
+                }
+            });
+
+            updateDate.textContent = `数据更新至：${todayStr}`;
+            todayCount.textContent = todayCnt;
+            recentCount.textContent = recentCnt;
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+        }
+
+        function parseDate(dateStr) {
+            // Handle YYYY.MM.DD format
+            const match = dateStr.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+            if (match) {
+                return new Date(match[1], match[2] - 1, match[3]);
+            }
+            return null;
+        }
+
+        function buildFilterOptions() {
+            const companyNatureSet = new Set();
+            const batchSet = new Set();
+
+            allData.forEach(row => {
+                const nature = row['企业性质']?.value || '';
+                const batch = row['批次']?.value || '';
+                if (nature) companyNatureSet.add(nature);
+                if (batch) batchSet.add(batch);
+            });
+
+            filterOptions['企业性质'] = Array.from(companyNatureSet).sort();
+            filterOptions['批次'] = Array.from(batchSet).sort();
+        }
+
+        function initializeFilters() {
+            createMultiSelect('companyNatureSelect', '企业性质', filterOptions['企业性质']);
+            createMultiSelect('batchSelect', '批次', filterOptions['批次']);
+
+            let debounceTimer;
+            const debouncedFilter = () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterState['工作地点'] = document.getElementById('locationInput').value.trim();
+                    filterState['公司名称'] = document.getElementById('companyNameInput').value.trim();
+                    filterState['招聘岗位'] = document.getElementById('positionInput').value.trim();
+                    applyFilters();
+                    renderTable();
+                }, 300);
+            };
+
+            document.getElementById('locationInput').addEventListener('input', debouncedFilter);
+            document.getElementById('companyNameInput').addEventListener('input', debouncedFilter);
+            document.getElementById('positionInput').addEventListener('input', debouncedFilter);
+            document.getElementById('resetBtn').addEventListener('click', resetFilters);
+        }
+
+        function createMultiSelect(containerId, fieldName, options) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'multi-select-wrapper';
+
+            const trigger = document.createElement('div');
+            trigger.className = 'multi-select-trigger';
+            trigger.innerHTML = '<span class="placeholder">请选择</span>';
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'multi-select-options';
+
+            options.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'multi-select-option';
+                optionDiv.innerHTML = `<input type="checkbox" value="${option}" /><span>${option}</span>`;
+
+                const checkbox = optionDiv.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (!filterState[fieldName].includes(option)) filterState[fieldName].push(option);
+                        optionDiv.classList.add('selected');
+                    } else {
+                        filterState[fieldName] = filterState[fieldName].filter(v => v !== option);
+                        optionDiv.classList.remove('selected');
+                    }
+                    updateTrigger(trigger, fieldName);
+                    applyFilters();
+                    renderTable();
+                });
+
+                optionDiv.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            trigger.addEventListener('click', () => {
+                const isShown = optionsContainer.classList.contains('show');
+                document.querySelectorAll('.multi-select-options').forEach(el => el.classList.remove('show'));
+                if (!isShown) optionsContainer.classList.add('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) optionsContainer.classList.remove('show');
+            });
+
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(optionsContainer);
+            container.appendChild(wrapper);
+        }
+
+        function updateTrigger(trigger, fieldName) {
+            const selected = filterState[fieldName];
+            if (selected.length === 0) {
+                trigger.innerHTML = '<span class="placeholder">请选择</span>';
+            } else if (selected.length <= 3) {
+                trigger.innerHTML = selected.map(s => `<span class="selected-tag">${s}<span class="remove" data-value="${s}">×</span></span>`).join('');
+                trigger.querySelectorAll('.selected-tag .remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = btn.dataset.value;
+                        filterState[fieldName] = filterState[fieldName].filter(v => v !== value);
+                        const container = btn.closest('.multi-select-wrapper');
+                        const checkbox = container.querySelector(`input[value="${value}"]`);
+                        if (checkbox) checkbox.checked = false;
+                        updateTrigger(trigger, fieldName);
+                        applyFilters();
+                        renderTable();
+                    });
+                });
+            } else {
+                trigger.innerHTML = `<span class="selected-tag">已选 ${selected.length} 项</span>`;
+            }
+        }
+
+        function applyFilters() {
+            filteredData = allData.filter(row => {
+                if (filterState['企业性质'].length > 0) {
+                    const value = row['企业性质']?.value || '';
+                    if (!filterState['企业性质'].includes(value)) return false;
+                }
+                if (filterState['批次'].length > 0) {
+                    const value = row['批次']?.value || '';
+                    if (!filterState['批次'].includes(value)) return false;
+                }
+                if (filterState['工作地点']) {
+                    const value = (row['工作地点']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['工作地点'].toLowerCase())) return false;
+                }
+                if (filterState['公司名称']) {
+                    const value = (row['公司名称']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['公司名称'].toLowerCase())) return false;
+                }
+                if (filterState['招聘岗位']) {
+                    const value = (row['招聘岗位']?.value || '').toLowerCase();
+                    if (!value.includes(filterState['招聘岗位'].toLowerCase())) return false;
+                }
+                return true;
+            });
+
+            totalCount.textContent = filteredData.length;
+            updateFilterStatus();
+        }
+
+        function updateFilterStatus() {
+            const tags = [];
+            if (filterState['企业性质'].length > 0) tags.push({field: '企业性质', value: filterState['企业性质'].join(', ')});
+            if (filterState['批次'].length > 0) tags.push({field: '批次', value: filterState['批次'].join(', ')});
+            if (filterState['工作地点']) tags.push({field: '工作地点', value: filterState['工作地点']});
+            if (filterState['公司名称']) tags.push({field: '公司名称', value: filterState['公司名称']});
+            if (filterState['招聘岗位']) tags.push({field: '招聘岗位', value: filterState['招聘岗位']});
+            filterStatus.innerHTML = tags.map(tag => `<span class="filter-tag">${tag.field}: ${tag.value.length > 20 ? tag.value.substring(0, 20) + '...' : tag.value}<span class="remove" data-field="${tag.field}">×</span></span>`).join('');
+            filterStatus.querySelectorAll('.filter-tag .remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const field = btn.dataset.field;
+                    if (field === '企业性质' || field === '批次') {
+                        filterState[field] = [];
+                        const containerId = field === '企业性质' ? 'companyNatureSelect' : 'batchSelect';
+                        const container = document.getElementById(containerId);
+                        container.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.closest('.multi-select-option').classList.remove('selected'); });
+                        const trigger = container.querySelector('.multi-select-trigger');
+                        updateTrigger(trigger, field);
+                    } else {
+                        filterState[field] = '';
+                        document.getElementById(field === '工作地点' ? 'locationInput' : field === '公司名称' ? 'companyNameInput' : 'positionInput').value = '';
+                    }
+                    applyFilters();
+                    renderTable();
+                });
+            });
+        }
+
+        function resetFilters() {
+            filterState = {
+                '企业性质': [],
+                '批次': [],
+                '工作地点': '',
+                '公司名称': '',
+                '招聘岗位': ''
+            };
+            document.getElementById('locationInput').value = '';
+            document.getElementById('companyNameInput').value = '';
+            document.getElementById('positionInput').value = '';
+            ['companyNatureSelect', 'batchSelect'].forEach(id => {
+                const container = document.getElementById(id);
+                container.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.closest('.multi-select-option').classList.remove('selected'); });
+                const fieldName = id === 'companyNatureSelect' ? '企业性质' : '批次';
+                updateTrigger(container.querySelector('.multi-select-trigger'), fieldName);
+            });
+            applyFilters();
+            renderTable();
+        }
+
+        function renderTable() {
+            const thead = dataTable.querySelector('thead');
+            const tbody = dataTable.querySelector('tbody');
+            thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+            if (filteredData.length === 0) {
+                dataTable.parentElement.style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+                dataTable.parentElement.style.display = 'block';
+                tbody.innerHTML = filteredData.map(row => {
+                    return '<tr>' + headers.map(header => {
+                        const cell = row[header] || {value: '', hyperlink: null};
+                        if (cell.hyperlink && cell.value) return `<td><a href="${cell.hyperlink}" target="_blank">${cell.value}</a></td>`;
+                        return `<td>${cell.value}</td>`;
+                    }).join('') + '</tr>';
+                }).join('');
+            }
+        }
+
+        // Start loading
+        init();
+    </script>
+</body>
+</html>
